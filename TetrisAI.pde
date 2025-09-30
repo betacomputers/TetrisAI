@@ -1,7 +1,7 @@
 final int CELL_SIZE = 40;
 final int ROWS = 20;
 final int COLS = 10;
-final int FPS = 300;
+final int FPS = 400;
 
 // Display and simulation controls
 final boolean SHOW_NETWORK = false;
@@ -10,7 +10,7 @@ final boolean SHOW_NETWORK = false;
 final int SIMULATION_UPDATES_PER_FRAME = 1;
 
 // How many ticks between automatic downward moves.
-final int FALL_THRESHOLD = 10;
+final int FALL_THRESHOLD = 1;
 
 final int HIDDEN_LAYERS = 1;
 final int HIDDEN_NODES = 4;
@@ -52,8 +52,12 @@ Population pop;
 
 Tetris player;
 
+// Playfield pixel offset (calculated in setup())
+int PLAYFIELD_X;
+int PLAYFIELD_Y;
+
 void settings() {
-   size(920,880); 
+   size(1000,880); 
 }
 
 void setup() {
@@ -62,6 +66,12 @@ void setup() {
       player = new Tetris();
     else
       pop = new Population(200);
+
+  // center the playfield horizontally and align the bottom border with the window bottom
+  PLAYFIELD_X = (width - COLS*CELL_SIZE) / 2;
+  // bottom border squares are drawn at PLAYFIELD_Y + ROWS*CELL_SIZE (their top),
+  // and extend one CELL_SIZE further. To align border bottom with window bottom:
+  PLAYFIELD_Y = height - ROWS*CELL_SIZE - CELL_SIZE;
 }
 
 void draw() {
@@ -87,13 +97,7 @@ void draw() {
       }
       pop.show(); 
     }
-      stroke(0);
-      fill(255);
-      textSize(30);
-      textAlign(LEFT);
-      text("Generation : "+pop.gen,120,460);
-      // text("Mutation Rate : "+mutation_rate*100+"%",120,500);
-      // text("Species: "+pop.best_tetris.species_id, 120,540);
+      // HUD and borders are drawn inside show() so nothing else to do here
     }
     show();
 }
@@ -102,30 +106,44 @@ void show() {
     
     //WALL
     stroke(100);
-    for(int i = 0; i < ROWS+2; i++) {
-       fill(255);
-       rect(0,i*CELL_SIZE, CELL_SIZE, CELL_SIZE);
-       rect(440,i*CELL_SIZE, CELL_SIZE, CELL_SIZE);
-       rect(880,i*CELL_SIZE, CELL_SIZE, CELL_SIZE);
-    }
-    for(int i = 0; i < width/CELL_SIZE; i++) {
-       fill(255);
-       rect(40+i*CELL_SIZE,0, CELL_SIZE, CELL_SIZE);
-       rect(40+i*CELL_SIZE,840, CELL_SIZE, CELL_SIZE);
-    }
-    fill(255);
+   int leftFrameX = PLAYFIELD_X - CELL_SIZE; // left frame area
+   int rightFrameX = PLAYFIELD_X + COLS*CELL_SIZE; // right frame area (immediately right of playfield)
+
+   // vertical frame blocks left, center divider, right
+   for(int i = 0; i < ROWS+2; i++) {
+     fill(120);
+     rect(leftFrameX, i*CELL_SIZE + PLAYFIELD_Y - CELL_SIZE, CELL_SIZE, CELL_SIZE);
+     rect(PLAYFIELD_X - CELL_SIZE, i*CELL_SIZE + PLAYFIELD_Y - CELL_SIZE, CELL_SIZE, CELL_SIZE);
+     rect(rightFrameX, i*CELL_SIZE + PLAYFIELD_Y - CELL_SIZE, CELL_SIZE, CELL_SIZE);
+   }
+
+   // horizontal frame blocks (top/bottom) - draw only across the playfield extents
+   int startX = PLAYFIELD_X - CELL_SIZE;
+   int endX = rightFrameX; // inclusive
+   int count = (endX - startX) / CELL_SIZE + 1;
+   for(int i = 0; i < count; i++) {
+     int x = startX + i*CELL_SIZE;
+     fill(120);
+     rect(x, PLAYFIELD_Y - CELL_SIZE, CELL_SIZE, CELL_SIZE);
+     rect(x, PLAYFIELD_Y + ROWS*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+   }
+   fill(255);
     textAlign(LEFT);
     textSize(30);
+    // left-side HUD
+    int hudLeftX = PLAYFIELD_X - 340;
+    int hudRightX = PLAYFIELD_X + COLS*CELL_SIZE + 60;
     if(HUMAN_PLAY) {
-      text("Score: "+player.score, 120,100);
-      text("Lines: "+player.lines, 120,140);
-      text("Tetris: "+player.tetris, 120,180);
+      text("SCORE: "+player.score, hudLeftX, PLAYFIELD_Y + 20);
+      text("LINES: "+player.lines, hudLeftX, PLAYFIELD_Y + 60);
+      text("TETRIS: "+player.tetris, hudLeftX, PLAYFIELD_Y + 100);
     } else {
-      text("Score: "+pop.best_tetris.score, 120,100);
-      text("Lines: "+pop.best_tetris.lines, 120,140);
-      // text("Tetris: "+pop.best_tetris.tetris, 120,180);
+      text("SCORE: "+pop.best_tetris.score, hudLeftX + 60, PLAYFIELD_Y + 20);
+      text("LINES: "+pop.best_tetris.lines, hudLeftX + 60, PLAYFIELD_Y + 60);
     }
-    text("Highscore : "+highscore,120,180);
+    // right-side HUD
+    text("GENERATION: "+pop.gen, hudRightX, PLAYFIELD_Y + 20);
+    text("HIGHSCORE:\n "+highscore, hudRightX, PLAYFIELD_Y + 60);
 }
 
 void keyPressed() {

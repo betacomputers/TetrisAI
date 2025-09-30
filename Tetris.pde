@@ -94,19 +94,45 @@ class Tetris {
     }
     
     void show_next() {
+         // constant-size box that contains both the label and the next piece
+         int boxW = 4 * CELL_SIZE + 32;   // wide enough for any tetromino (4 cols)
+         int boxH = 4 * CELL_SIZE;   // tall enough for label + piece
+         int boxX = PLAYFIELD_X - 280;    // left of playfield
+         int boxY = PLAYFIELD_Y + 140;    // top position for the box
+         
+         // draw white bordered box
+         stroke(255);
+         strokeWeight(3);
+         noFill();
+         rect(boxX, boxY, boxW, boxH);
+         
+         // draw label inside box
          stroke(0);
          fill(255);
          textSize(30);
-         textAlign(LEFT);
-         text("Next: ", 120, 340);
+         textAlign(LEFT, TOP);
+         text("NEXT:", boxX + 12, boxY + 8);
+         
+         // compute area below the label to center the piece
+         int labelArea = 40; // reserved vertical space for label
+         int pieceAreaY = boxY + labelArea;
+         int pieceAreaH = boxH - labelArea - 12;
+         int pieceW = next_tet[0].length * CELL_SIZE;
+         int pieceH = next_tet.length * CELL_SIZE;
+         int pieceOriginX = boxX + (boxW - pieceW) / 2;
+         int pieceOriginY = pieceAreaY + (pieceAreaH - pieceH) / 2;
+         
+         // draw piece cells centered inside the box
+         stroke(0);
+         strokeWeight(1);
          for(int y = 0; y < next_tet.length; y++) {
-            for(int x = 0; x < next_tet[0].length; x++) {
-               int val = next_tet[y][x];
-               if(val != 0) {
-                   fill(colors[val]);
-                   rect(230+x*CELL_SIZE, 290+y*CELL_SIZE, CELL_SIZE, CELL_SIZE);
-               }
-            }
+             for(int x = 0; x < next_tet[0].length; x++) {
+                 int val = next_tet[y][x];
+                 if(val != 0) {
+                     fill(colors[val]);
+                     rect(pieceOriginX + x*CELL_SIZE, pieceOriginY + y*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                 }
+             }
          }
     }
     
@@ -128,8 +154,8 @@ class Tetris {
               int val = game.get_at(j, i);
               color c = colors[val];
               if(val != 0) {
-                fill(c);
-                rect(480+j*CELL_SIZE, 40+i*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                     fill(c);
+                     rect(PLAYFIELD_X + j*CELL_SIZE, PLAYFIELD_Y + i*CELL_SIZE, CELL_SIZE, CELL_SIZE);
               }
            }
         }
